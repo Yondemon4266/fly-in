@@ -3,8 +3,10 @@ name = "fly-in"
 version = "0.1.0"
 description = "This project consists in designing an efficient drone routing system that navigates multiple drones through connected zones while minimizing simulation turns and handling movement constraints"
 readme = "README.md"
-requires-python = ">=3.13"
-dependencies = []
+requires-python = ">=3.10"
+dependencies = [
+    "pydantic>=2.12.5",
+]
 
 [dependency-groups]
 dev = [
