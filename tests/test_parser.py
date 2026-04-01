@@ -20,8 +20,9 @@ valid_files = list(VALID_MAPS_DIR.glob("*.txt"))
 @pytest.mark.parametrize("file_path", invalid_files, ids=lambda p: p.name)
 def test_parser_with_invalid_files(file_path):
     """Vérifie que les maps mal formées lèvent bien une ParsingError."""
-    with pytest.raises(ParsingError):
+    with pytest.raises(ParsingError) as exc_info:
         MapParser.parse(str(file_path))
+    print(f"\n[TEST {file_path.name}] raised error : {exc_info.value}")
 
 
 # 4. Tester les maps valides
