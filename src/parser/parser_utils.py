@@ -5,7 +5,7 @@ import sys
 class ParserUtils:
 
     @staticmethod
-    def print_formatted_errors(e: ValidationError, line: int) -> None:
+    def print_formatted_errors(e: ValidationError) -> None:
         sys.stderr.write("\n")
         for err in e.errors():
             field_name = (
@@ -14,6 +14,5 @@ class ParserUtils:
                 else "global"
             )
             sys.stderr.write(
-                f"[Parsing {field_name} error]: at line {line}:"
-                f" {err['msg']}\n\n"
+                f"[Parsing {field_name} error]:" f" {err['msg']}\n\n"
             )

@@ -18,6 +18,7 @@ class MapParser:
         self.end_hub: Optional[Hub] = None
         self.hubs: dict[str, Hub] = {}
         self.connections: dict[str, Connection] = {}
+        self.seen_coordinates: set[tuple[int, int]] = set()
 
     @classmethod
     def parse(cls, file_path: str):
@@ -41,13 +42,17 @@ class MapParser:
             raise ParsingError(
                 f"end_hub '{parser.end_hub.name}' is isolated.", 0
             )
-        return MapConfig(
-            nb_drones=parser.nb_drones,
-            start_hub=parser.start_hub,
-            end_hub=parser.end_hub,
-            hubs=list(parser.hubs.values()),
-            connections=list(parser.connections.values()),
-        )
+        try:
+            return MapConfig(
+                nb_drones=parser.nb_drones,
+                start_hub=parser.start_hub,
+                end_hub=parser.end_hub,
+                hubs=list(parser.hubs.values()),
+                connections=list(parser.connections.values()),
+            )
+        except ValidationError as e:
+            ParserUtils.print_formatted_errors(e)
+            raise ParsingError("Invalid data format for hub or connection", 0)
 
     def _read_file(self, path: Path):
         with open(path, "r") as file:
@@ -88,7 +93,10 @@ class MapParser:
                 case _:
                     raise ParsingError(f"Unknown key '{key}'", line_number)
         except ValidationError as e:
-            ParserUtils.print_formatted_errors(e, line_number)
+            ParserUtils.print_formatted_errors(e)
+            raise ParsingError(
+                "Invalid data format for hub or connection", line_number
+            )
 
     def _handle_nb_drones(self, info: str, line_number: int):
         try:
@@ -103,6 +111,7 @@ class MapParser:
         if self.start_hub:
             raise ParsingError("start_hub already defined", line_number)
         self.start_hub = Hub.model_validate(info)
+        self._check_and_add_coordinates(self.start_hub, line_number)
         if self.start_hub.name in self.hubs:
             raise ParsingError(
                 f"Hub {self.start_hub.name} already declared in hubs",
@@ -115,6 +124,8 @@ class MapParser:
             raise ParsingError("end_hub already defined", line_number)
 
         self.end_hub = Hub.model_validate(info)
+        self._check_and_add_coordinates(self.end_hub, line_number)
+
         if self.end_hub.name in self.hubs:
             raise ParsingError(
                 f"Hub {self.end_hub.name} already declared in hubs",
@@ -124,6 +135,8 @@ class MapParser:
 
     def _handle_hub(self, info: str, line_number: int):
         new_hub = Hub.model_validate(info)
+        self._check_and_add_coordinates(new_hub, line_number)
+
         if new_hub.name in self.hubs:
             raise ParsingError(
                 f"Hub {new_hub.name} already declared in hubs",
@@ -158,6 +171,16 @@ class MapParser:
         self.connections[conn_key_1] = connection
         self.hubs[hub_a_name].connections.append(connection)
         self.hubs[hub_b_name].connections.append(connection)
+
+    def _check_and_add_coordinates(self, hub: Hub, line_number: int):
+        coords = (hub.x, hub.y)
+        if coords in self.seen_coordinates:
+            raise ParsingError(
+                f"Coordinates {coords} for hub '{hub.name}'"
+                " are already taken.",
+                line_number,
+            )
+        self.seen_coordinates.add(coords)
 
 
 if __name__ == "__main__":
