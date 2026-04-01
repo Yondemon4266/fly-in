@@ -29,19 +29,17 @@ class MapParser:
         parser = cls()
         parser._read_file(path)
         if parser.nb_drones is None:
-            raise ParsingError("Missing mandatory key 'nb_drones' in file.", 0)
+            raise ParsingError("Missing mandatory key 'nb_drones' in file.")
         if parser.start_hub is None:
-            raise ParsingError("Missing mandatory key 'start_hub' in file.", 0)
+            raise ParsingError("Missing mandatory key 'start_hub' in file.")
         if parser.end_hub is None:
-            raise ParsingError("Missing mandatory key 'end_hub' in file.", 0)
+            raise ParsingError("Missing mandatory key 'end_hub' in file.")
         if not parser.start_hub.connections:
             raise ParsingError(
-                f"start_hub '{parser.start_hub.name}' is isolated.", 0
+                f"start_hub '{parser.start_hub.name}' is isolated."
             )
         if not parser.end_hub.connections:
-            raise ParsingError(
-                f"end_hub '{parser.end_hub.name}' is isolated.", 0
-            )
+            raise ParsingError(f"end_hub '{parser.end_hub.name}' is isolated.")
         try:
             return MapConfig(
                 nb_drones=parser.nb_drones,
@@ -52,7 +50,7 @@ class MapParser:
             )
         except ValidationError as e:
             ParserUtils.print_formatted_errors(e)
-            raise ParsingError("Invalid data format for hub or connection", 0)
+            raise ParsingError("Invalid data format for hub or connection")
 
     def _read_file(self, path: Path):
         with open(path, "r") as file:
@@ -101,6 +99,12 @@ class MapParser:
     def _handle_nb_drones(self, info: str, line_number: int):
         try:
             self.nb_drones = int(info)
+            if self.nb_drones < 1:
+                raise ParsingError(
+                    "nb_drones key must be positive int value. "
+                    f"input '{info}'",
+                    line_number,
+                )
         except ValueError as e:
             raise ParsingError(
                 f"nb_drones key must have a positive int value. input '{e}'",

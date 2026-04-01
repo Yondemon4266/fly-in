@@ -5,8 +5,8 @@ start_hub: start 0 0 [color=green max_drones=12]
 hub: gate1 1 0 [color=orange max_drones=1]
 hub: gate2 2 0 [color=orange max_drones=1]
 hub: gate3 3 0 [color=orange max_drones=1]
-hub: gate18 3 0 [color=orange max_drones=1]
-hub: gate19 19 0
+hub: gate18 29 0 [color=orange max_drones=1]
+
 hub: waiting_area1 1 1 [color=blue max_drones=4]
 hub: waiting_area2 2 1 [color=blue max_drones=4]
 hub: waiting_area3 3 1 [color=blue max_drones=4]
@@ -20,7 +20,6 @@ hub: final_bottleneck 8 0 [color=orange max_drones=3]
 end_hub: goal 9 0 [color=green max_drones=12]
 
 # Sequential gates (major bottleneck)
-connection: gate19-gate18 [max_link_capacity=1]
 connection: start-gate1 [max_link_capacity=1]
 connection: gate1-gate2 [max_link_capacity=1]
 connection: gate2-gate3 [max_link_capacity=1]
@@ -45,7 +44,7 @@ connection: priority_bypass2-convergence
 
 # Final challenge
 connection: convergence-final_bottleneck
-connection: final_bottleneck-goal
+connection: final_bottleneck-gate18
 
 # Emergency overflow paths
 connection: waiting_area3-convergence
