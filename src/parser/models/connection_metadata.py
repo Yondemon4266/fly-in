@@ -34,7 +34,6 @@ class ConnectionMetadata(BaseModel):
             if len(splitted_data) != 1:
                 raise ValueError(f"{message} '{data}'")
             res = splitted_data[0].split("=")
-            print(res)
             if len(res) != 2:
                 raise ValueError(f"{message} '{data}'")
             key, value = res[0], res[1]

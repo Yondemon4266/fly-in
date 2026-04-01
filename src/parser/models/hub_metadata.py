@@ -58,7 +58,6 @@ class HubMetadata(BaseModel):
                             f"a single-word color '{data}'"
                         )
                 res[key] = value
-            print(res)
             return res
 
         return data
