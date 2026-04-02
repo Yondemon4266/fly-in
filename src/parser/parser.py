@@ -6,9 +6,9 @@ from src.parser.parser_utils import ParserUtils
 import sys
 from pathlib import Path
 from src.exceptions import ParsingError
-from src.parser.models.hub import Hub
-from src.parser.models.connection import Connection
-from src.parser.models.map_config import MapConfig
+from src.models.hub import Hub
+from src.models.connection import Connection
+from src.models.map_config import MapConfig
 
 
 class MapParser:
