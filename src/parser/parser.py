@@ -121,6 +121,12 @@ class MapParser:
                 f"Hub {self.start_hub.name} already declared in hubs",
                 line_number,
             )
+        if not self.nb_drones:
+            raise ParsingError(
+                f"nb_drones key must be declared first.'",
+                line_number,
+            )
+        self.start_hub.metadata.max_drones = self.nb_drones
         self.hubs[self.start_hub.name] = self.start_hub
 
     def _handle_end_hub(self, info: str, line_number: int):
@@ -135,6 +141,12 @@ class MapParser:
                 f"Hub {self.end_hub.name} already declared in hubs",
                 line_number,
             )
+        if not self.nb_drones:
+            raise ParsingError(
+                f"nb_drones key must be declared first.'",
+                line_number,
+            )
+        self.end_hub.metadata.max_drones = self.nb_drones
         self.hubs[self.end_hub.name] = self.end_hub
 
     def _handle_hub(self, info: str, line_number: int):
