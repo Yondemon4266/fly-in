@@ -14,3 +14,8 @@ class ParsingError(FlyinError):
 class PathNotFoundError(FlyinError):
     def __init__(self, message: str):
         super().__init__(f"[Path not found error] {message}")
+
+
+class ConnectionNotFoundError(FlyinError):
+    def __init__(self, message: str):
+        super().__init__(f"[Connection not found error] {message}")
