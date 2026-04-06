@@ -6,9 +6,9 @@ from src.parser.parser_utils import ParserUtils
 import sys
 from pathlib import Path
 from src.exceptions import ParsingError
-from src.parser.models.hub import Hub
-from src.parser.models.connection import Connection
-from src.parser.models.map_config import MapConfig
+from src.models.hub import Hub
+from src.models.connection import Connection
+from src.models.map_config import MapConfig
 
 
 class MapParser:
@@ -121,6 +121,12 @@ class MapParser:
                 f"Hub {self.start_hub.name} already declared in hubs",
                 line_number,
             )
+        if not self.nb_drones:
+            raise ParsingError(
+                f"nb_drones key must be declared first.'",
+                line_number,
+            )
+        self.start_hub.metadata.max_drones = self.nb_drones
         self.hubs[self.start_hub.name] = self.start_hub
 
     def _handle_end_hub(self, info: str, line_number: int):
@@ -135,6 +141,12 @@ class MapParser:
                 f"Hub {self.end_hub.name} already declared in hubs",
                 line_number,
             )
+        if not self.nb_drones:
+            raise ParsingError(
+                f"nb_drones key must be declared first.'",
+                line_number,
+            )
+        self.end_hub.metadata.max_drones = self.nb_drones
         self.hubs[self.end_hub.name] = self.end_hub
 
     def _handle_hub(self, info: str, line_number: int):

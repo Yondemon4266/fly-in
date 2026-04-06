@@ -7,8 +7,8 @@ from pydantic import (
 )
 from typing import Any
 from src.parser.parser_utils import ParserUtils
-from src.parser.models.hub_metadata import HubMetadata
-from src.parser.models.connection import Connection
+from src.models.hub_metadata import HubMetadata
+from src.models.connection import Connection
 
 
 class Hub(BaseModel):

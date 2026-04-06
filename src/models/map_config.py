@@ -2,8 +2,8 @@ from pydantic import (
     BaseModel,
     Field,
 )
-from src.parser.models.hub import Hub
-from src.parser.models.connection import Connection
+from src.models.hub import Hub
+from src.models.connection import Connection
 
 
 class MapConfig(BaseModel):

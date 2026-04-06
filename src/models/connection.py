@@ -7,7 +7,7 @@ from pydantic import (
 )
 from typing import Any
 from src.parser.parser_utils import ParserUtils
-from src.parser.models.connection_metadata import ConnectionMetadata
+from src.models.connection_metadata import ConnectionMetadata
 
 
 class Connection(BaseModel):
