@@ -69,29 +69,50 @@ class SimulationEngine:
             print("No paths to display.")
             return
 
-        max_turn = max(len(path) - 1 for path in all_drones_paths)
+        # 1. Le VRAI max_turn est le dernier temps (index 0 du tuple) du trajet le plus long
+        max_turn = max(path[-1][0] for path in all_drones_paths)
 
         print("\n" + "=" * 30)
         print("     SIMULATION RESULTS")
         print("=" * 30)
 
+        # 2. On transforme les étapes en une ligne du temps complète pour chaque drone
+        timelines: list[dict[int, str]] = []
+        for path in all_drones_paths:
+            timeline: dict[int, str] = {}
+            for i in range(len(path)):
+                t, hub = path[i]
+                timeline[t] = hub
+
+                # Si on a sauté un tour (zone restreinte), on comble le trou avec un statut "Transit"
+                if i < len(path) - 1:
+                    next_t, next_hub = path[i + 1]
+                    for transit_t in range(t + 1, next_t):
+                        timeline[transit_t] = f"Transit ({hub} -> {next_hub})"
+
+            # On remplit tous les tours restants avec le statut "Arrived"
+            final_t, final_hub = path[-1]
+            for t in range(final_t + 1, max_turn + 1):
+                timeline[t] = f"{final_hub} (Arrived)"
+
+            timelines.append(timeline)
+
+        # 3. L'affichage propre, en lisant la ligne du temps
         for current_turn in range(max_turn + 1):
             print(f"\n--- TURN {current_turn} ---")
 
-            for drone_index, path in enumerate(all_drones_paths, start=1):
-                if current_turn < len(path):
-                    current_hub = path[current_turn][1]
+            for drone_index, timeline in enumerate(timelines, start=1):
+                status = timeline[current_turn]
 
-                    status = ""
-                    if (
-                        current_turn > 0
-                        and path[current_turn][1] == path[current_turn - 1][1]
-                    ):
-                        status = " (Waiting)"
-
-                    print(f"Drone {drone_index} : {current_hub}{status}")
+                # Détection de l'attente (si on est au même endroit et qu'on ne bouge pas)
+                if (
+                    current_turn > 0
+                    and status == timeline[current_turn - 1]
+                    and "Arrived" not in status
+                    and "Transit" not in status
+                ):
+                    print(f"Drone {drone_index} : {status} (Waiting)")
                 else:
-                    final_hub = path[-1][1]
-                    print(f"Drone {drone_index} : {final_hub} (Arrived)")
+                    print(f"Drone {drone_index} : {status}")
 
         print("\n" + "=" * 30 + "\n")
