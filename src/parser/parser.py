@@ -118,12 +118,12 @@ class MapParser:
         self._check_and_add_coordinates(self.start_hub, line_number)
         if self.start_hub.name in self.hubs:
             raise ParsingError(
-                f"Hub {self.start_hub.name} already declared in hubs",
+                "Hub {self.start_hub.name} already declared in hubs",
                 line_number,
             )
         if not self.nb_drones:
             raise ParsingError(
-                f"nb_drones key must be declared first.'",
+                "nb_drones key must be declared first.'",
                 line_number,
             )
         self.start_hub.metadata.max_drones = self.nb_drones
@@ -143,7 +143,7 @@ class MapParser:
             )
         if not self.nb_drones:
             raise ParsingError(
-                f"nb_drones key must be declared first.'",
+                "nb_drones key must be declared first.'",
                 line_number,
             )
         self.end_hub.metadata.max_drones = self.nb_drones

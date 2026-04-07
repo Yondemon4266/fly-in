@@ -2,6 +2,7 @@ import sys
 from src.exceptions import ParsingError
 from src.parser.parser import MapParser
 from src.navigation.simulation_engine import SimulationEngine
+from src.display.display import DisplayPygameFlyin
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
@@ -10,7 +11,9 @@ if __name__ == "__main__":
     try:
         map_config = MapParser.parse(sys.argv[1])
         simulation_engine = SimulationEngine(map_config)
-        simulation_engine.execute_turns()
+        simulation_engine.plan_drone_schedules()
+        DisplayPygameFlyin(simulation_engine.drones, map_config.hubs)
+
     except OSError as e:
         sys.stderr.write(f"{e}")
         sys.exit(1)
