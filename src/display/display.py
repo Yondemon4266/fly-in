@@ -31,7 +31,7 @@ class DisplayPygameFlyin:
 
         self.current_drone_img = self.original_drone_img
         self._update_drone_image_size()
-        self.turn_duration = 650
+        self.turn_duration = 400
         self.current_turn = 0
         self.turn_progress = 0
         self.pause_at_turn = -1
@@ -107,6 +107,10 @@ class DisplayPygameFlyin:
                                 self.current_turn = 0
                             self.is_playing = not self.is_playing
                             self.advancing = True
+                        case pygame.K_r:
+                            self.is_playing = False
+                            self.advancing = True
+                            self.current_turn = 0
                         case pygame.K_RIGHT:
                             if (
                                 not self.is_playing
@@ -130,21 +134,79 @@ class DisplayPygameFlyin:
         self.screen.blit(fps_surface, fps_rect)
 
     def _display_top_right_info(self) -> None:
+        lines_of_text = [
+            f"Current turn: {self.current_turn}",
+            f"Resolved in: {self.max_turn} turns",
+            f"Total drones: {len(self.drones)}",
+        ]
+        surfaces = [
+            self.font.render(text, True, (255, 255, 255))
+            for text in lines_of_text
+        ]
+        line_height = self.font.get_linesize()
+        start_x = self.screen.get_width() - 10
+        start_y = 10
+        blits_to_draw = []
+        for index, surface in enumerate(surfaces):
+            rect = surface.get_rect(
+                topright=(start_x, start_y + (index * line_height))
+            )
+            blits_to_draw.append((surface, rect))
+        self.screen.blits(blits_to_draw)
+
+    def _display_bottom_right_info(self, hub: Hub) -> None:
         screen_width = self.screen.get_width()
+        screen_height = self.screen.get_height()
 
-        line1_surface = self.font.render(
-            f"Current turn: {self.current_turn}", True, (255, 255, 255)
+        current_drones_count = sum(
+            1
+            for drone in self.drones
+            if drone.get_state_at(self.current_turn).hub == hub.name
+            and drone.get_state_at(self.current_turn).state
+            in (DroneState.ON_HUB, DroneState.ARRIVED)
         )
-        line1_rect = line1_surface.get_rect(topright=(screen_width - 10, 10))
-        self.screen.blit(line1_surface, line1_rect)
+        lines_of_text = [
+            f"Hub name: {hub.name}",
+            f"Max drones: {hub.metadata.max_drones}",
+            f"Zone type: {hub.metadata.zone.value}",
+            f"Drones on hub: {current_drones_count}",
+        ]
+        surfaces = [
+            self.font.render(text, True, (255, 255, 255))
+            for text in lines_of_text
+        ]
+        line_height = self.font.get_linesize()
+        total_height = line_height * len(surfaces)
+        start_y = screen_height - total_height - 10
+        start_x = screen_width - 10
+        blits_to_draw = []
+        for index, surface in enumerate(surfaces):
+            rect = surface.get_rect(
+                topright=(start_x, start_y + (index * line_height))
+            )
+            blits_to_draw.append((surface, rect))
+        self.screen.blits(blits_to_draw)
 
-        line2_surface = self.font.render(
-            f"Resolved in: {self.max_turn} turns", True, (255, 255, 255)
+    def _display_hub_capacity(
+        self, hub: Hub, centered_pos: tuple[int, int]
+    ) -> None:
+        capacity_surface = self.font.render(
+            str(hub.metadata.max_drones), True, (255, 255, 255)
         )
-        line2_rect = line2_surface.get_rect(
-            topright=(screen_width - 10, line1_rect.bottom + 5)
+        capacity_rect = capacity_surface.get_rect(center=centered_pos)
+        self.screen.blit(capacity_surface, capacity_rect)
+
+    def _display_hub_name(
+        self, hub: Hub, centered_pos: tuple[int, int]
+    ) -> None:
+        text_surface = self.font.render(hub.name, True, (255, 255, 255))
+
+        offset_y = self.camera.hub_radius + 20
+        text_rect = text_surface.get_rect(
+            center=(centered_pos[0], centered_pos[1] - offset_y)
         )
-        self.screen.blit(line2_surface, line2_rect)
+
+        self.screen.blit(text_surface, text_rect)
 
     def _draw_hubs(self) -> None:
         mouse_x, mouse_y = pygame.mouse.get_pos()
@@ -171,28 +233,40 @@ class DisplayPygameFlyin:
                 hub.metadata.max_drones > 1
                 and hub.metadata.zone.value != "blocked"
             ):
-                capacity_surface = self.font.render(
-                    str(hub.metadata.max_drones), True, (255, 255, 255)
-                )
-                capacity_rect = capacity_surface.get_rect(center=centered_pos)
-                self.screen.blit(capacity_surface, capacity_rect)
+                self._display_hub_capacity(hub, centered_pos)
 
-            dx = mouse_x - centered_pos[0]
-            dy = mouse_y - centered_pos[1]
-            distance = math.sqrt(dx**2 + dy**2)
+            mouse_dx = mouse_x - centered_pos[0]
+            mouse_dy = mouse_y - centered_pos[1]
+            distance = math.sqrt(mouse_dx**2 + mouse_dy**2)
             if distance <= self.camera.hub_radius + border_thickness:
-                text_surface = self.font.render(
-                    hub.name, True, (255, 255, 255)
-                )
+                self._display_hub_name(hub, centered_pos)
+                self._display_bottom_right_info(hub)
 
-                offset_y = self.camera.hub_radius + 20
-                text_rect = text_surface.get_rect(
-                    center=(centered_pos[0], centered_pos[1] - offset_y)
-                )
-
-                self.screen.blit(text_surface, text_rect)
+    def _display_connection_info(self, connection: Connection) -> None:
+        screen_width = self.screen.get_width()
+        screen_height = self.screen.get_height()
+        lines_of_text = [
+            f"Connection name: {connection.hub_a}-{connection.hub_b}",
+            f"Max link capacity: {connection.metadata.max_link_capacity}",
+        ]
+        surfaces = [
+            self.font.render(text, True, (255, 255, 255))
+            for text in lines_of_text
+        ]
+        line_height = self.font.get_linesize()
+        total_height = line_height * (len(surfaces) + 6)
+        start_y = screen_height - total_height - 10
+        start_x = screen_width - 10
+        blits_to_draw = []
+        for index, surface in enumerate(surfaces):
+            rect = surface.get_rect(
+                topright=(start_x, start_y + (index * line_height))
+            )
+            blits_to_draw.append((surface, rect))
+        self.screen.blits(blits_to_draw)
 
     def _draw_connections(self) -> None:
+        mouse_x, mouse_y = pygame.mouse.get_pos()
         for connection in self.connections:
             hub_a = self.hubs[connection.hub_a]
             hub_b = self.hubs[connection.hub_b]
@@ -218,13 +292,27 @@ class DisplayPygameFlyin:
             end_y = int(y_b - (dir_y * offset))
             thickness = max(2, int(self.camera.hub_radius * 0.75))
             line_color = (180, 180, 180)
-            pygame.draw.line(
-                self.screen,
-                line_color,
-                (start_x, start_y),
-                (end_x, end_y),
-                thickness,
-            )
+            hitbox_size = thickness
+            mouse_rect = pygame.Rect(0, 0, hitbox_size, hitbox_size)
+            mouse_rect.center = (mouse_x, mouse_y)
+
+            if mouse_rect.clipline((start_x, start_y), (end_x, end_y)):
+                pygame.draw.line(
+                    self.screen,
+                    (255, 200, 0),
+                    (start_x, start_y),
+                    (end_x, end_y),
+                    thickness,
+                )
+                self._display_connection_info(connection)
+            else:
+                pygame.draw.line(
+                    self.screen,
+                    line_color,
+                    (start_x, start_y),
+                    (end_x, end_y),
+                    thickness,
+                )
 
     def _draw_drones(self) -> None:
 

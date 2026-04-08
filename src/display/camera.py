@@ -7,7 +7,7 @@ class Camera:
     ) -> None:
         self.screen_width = screen_width
         self.screen_height = screen_height
-        margin = 100
+        margin = 50
 
         logical_xs = [hub.x for hub in hubs.values()]
         logical_ys = [hub.y for hub in hubs.values()]
