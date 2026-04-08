@@ -45,5 +45,9 @@ class Drone:
             arrived_drone_info = DroneInfo(DroneState.ARRIVED, final_hub)
             self.timeline[t] = arrived_drone_info
 
-    def get_state_at(self, turn: int) -> DroneInfo | None:
-        return self.timeline.get(turn)
+    def get_state_at(self, turn: int) -> DroneInfo:
+        state = self.timeline.get(turn)
+        if state is not None:
+            return state
+        last_known_turn = max(self.timeline.keys())
+        return self.timeline[last_known_turn]
