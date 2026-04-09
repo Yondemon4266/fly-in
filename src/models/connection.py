@@ -27,7 +27,7 @@ class Connection(BaseModel):
         if isinstance(data, str):
             data_clean = data.strip()
             name_part = data_clean
-            meta_dict = {}
+            meta_dict: str = ""
 
             if "[" in data_clean:
                 parts = data_clean.split("[")

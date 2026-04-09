@@ -1,5 +1,5 @@
 import sys
-from src.exceptions import ParsingError, FlyinError
+from src.exceptions import FlyinError
 from src.parser.parser import MapParser
 from src.navigation.simulation_engine import SimulationEngine
 from src.display.display import DisplayPygameFlyin

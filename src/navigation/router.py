@@ -114,12 +114,14 @@ class Router:
             self.map_config.end_hub.name,
         )
 
-    def _get_destination_name(self, connection, current_hub_name: str) -> str:
+    def _get_destination_name(
+        self, connection: Connection, current_hub_name: str
+    ) -> str:
         if connection.hub_a == current_hub_name:
             return connection.hub_b
         return connection.hub_a
 
-    def _get_connection_name(self, connection) -> str:
+    def _get_connection_name(self, connection: Connection) -> str:
         return f"{connection.hub_a}_{connection.hub_b}"
 
     def _create_wait_node(
@@ -187,7 +189,7 @@ class Router:
         self,
         current_node: AStarNode,
         destination_hub: Hub,
-        connection,
+        connection: Connection,
         reservation_table: dict[tuple[int, str], int],
     ) -> AStarNode | None:
         current_turn = current_node.turns_from_start

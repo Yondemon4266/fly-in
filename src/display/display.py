@@ -360,16 +360,15 @@ class DisplayPygameFlyin:
     def _get_zone_border(
         self, zone_type: ZoneType
     ) -> tuple[tuple[int, int, int], int]:
-        # On utilise .value pour récupérer la chaîne de caractères de l'Enum ('restricted', etc.)
         match zone_type.value:
             case "restricted":
-                return (255, 140, 0), 6  # Un contour Orange épais
+                return (255, 140, 0), 6
             case "priority":
-                return (50, 205, 50), 6  # Un contour Vert brillant épais
+                return (50, 205, 50), 6
             case "blocked":
-                return (220, 20, 60), 6  # Un contour Rouge intense épais
-            case _:  # "normal" ou autre
-                return (150, 150, 150), 4  # Un contour Gris classique et fin
+                return (220, 20, 60), 6
+            case _:
+                return (150, 150, 150), 4
 
     def _get_valid_color(self, color_name: str | None) -> str:
         if not color_name:
