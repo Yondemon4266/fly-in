@@ -57,6 +57,11 @@ class SimulationEngine:
         self.drones: list[Drone] = []
 
         for i in range(self.map_config.nb_drones):
+            if i % 100 == 0 and i > 0:
+                print(
+                    f"Planning routes: {i}/{self.map_config.nb_drones} "
+                    "drones processed..."
+                )
             drone = Drone(drone_id=i + 1)
             drone_temporal_path = self.pathfinder.a_star_path_finder(
                 self.reservation_table

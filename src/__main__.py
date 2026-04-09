@@ -3,6 +3,7 @@ from src.exceptions import FlyinError
 from src.parser.parser import MapParser
 from src.navigation.simulation_engine import SimulationEngine
 from src.display.display import DisplayPygameFlyin
+import pygame
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
@@ -17,8 +18,14 @@ if __name__ == "__main__":
         )
 
     except OSError as e:
-        sys.stderr.write(f"{e}")
+        sys.stderr.write(f"{e}\n\n")
         sys.exit(1)
     except FlyinError as e:
-        sys.stderr.write(f"{e}")
+        sys.stderr.write(f"{e}\n\n")
+        sys.exit(1)
+    except pygame.error as e:
+        sys.stderr.write(f"[Display Error] Pygame failed: {e}\n\n")
+        sys.exit(1)
+    except Exception as e:
+        sys.stderr.write(f"[Unexpected Error] {e.__class__.__name__}: {e}\n\n")
         sys.exit(1)

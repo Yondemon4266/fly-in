@@ -5,6 +5,7 @@ from src.models.hub_metadata import ZoneType
 from src.display.camera import Camera
 from src.models.connection import Connection
 import math
+import os
 
 
 class DisplayPygameFlyin:
@@ -14,6 +15,10 @@ class DisplayPygameFlyin:
         hubs: list[Hub],
         connections: list[Connection],
     ) -> None:
+
+        self.asset_path = "assets/drone.png"
+        self._check_asset_path()
+
         self.drones = drones
         self.hubs = self._init_hubs_dict(hubs)
         self.connections = connections
@@ -26,7 +31,7 @@ class DisplayPygameFlyin:
         pygame.font.init()
         self.font = pygame.font.SysFont("Trebuchet MS", 14, bold=True)
         self.original_drone_img = pygame.image.load(
-            "assets/drone.png"
+            self.asset_path
         ).convert_alpha()
 
         self.current_drone_img = self.original_drone_img
@@ -57,6 +62,12 @@ class DisplayPygameFlyin:
             pygame.display.flip()
             self.dt = self.clock.tick(60)
         pygame.quit()
+
+    def _check_asset_path(self) -> None:
+        if not os.path.exists(self.asset_path):
+            raise FileNotFoundError(
+                f"Missing required asset: '{self.asset_path}'"
+            )
 
     def _init_hubs_dict(self, list_hubs: list[Hub]) -> dict[str, Hub]:
         created_hubs: dict[str, Hub] = {}
@@ -317,7 +328,7 @@ class DisplayPygameFlyin:
     def _draw_drones(self) -> None:
 
         lerp_factor = self.turn_progress / max(self.turn_duration, 1)
-
+        positions_count: dict[tuple[int, int], int] = {}
         for drone in self.drones:
             x_a, y_a = self._get_logical_pos_at_turn(drone, self.current_turn)
 
@@ -329,8 +340,20 @@ class DisplayPygameFlyin:
             current_y = y_a + (y_b - y_a) * lerp_factor
 
             pos = self.camera.get_screen_coords(current_x, current_y)
+            if pos in positions_count:
+                positions_count[pos] += 1
+            else:
+                positions_count[pos] = 1
+        for pos, count in positions_count.items():
             drone_rect = self.current_drone_img.get_rect(center=pos)
             self.screen.blit(self.current_drone_img, drone_rect)
+
+            if count > 1:
+                text_surface = self.font.render(
+                    f"x{count}", True, (255, 255, 0)
+                )
+                text_rect = text_surface.get_rect(bottomleft=drone_rect.center)
+                self.screen.blit(text_surface, text_rect)
 
     def _update_drone_image_size(self) -> None:
         size = int(self.camera.drone_radius * 8)
