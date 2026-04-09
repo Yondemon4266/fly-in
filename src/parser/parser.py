@@ -12,7 +12,10 @@ from src.models.map_config import MapConfig
 
 
 class MapParser:
+    """Parser that reads map text files into validated map configuration."""
+
     def __init__(self) -> None:
+        """Initialize parser state for a single map file."""
         self.nb_drones: Optional[int] = None
         self.start_hub: Optional[Hub] = None
         self.end_hub: Optional[Hub] = None
@@ -22,6 +25,18 @@ class MapParser:
 
     @classmethod
     def parse(cls, file_path: str) -> MapConfig:
+        """Parse a map file and return the validated configuration.
+
+        Args:
+            file_path: Path to a ``.txt`` map file.
+
+        Returns:
+            Validated map configuration object.
+
+        Raises:
+            OSError: If file extension is invalid.
+            ParsingError: If map content violates parser rules.
+        """
         path = Path(file_path)
         if path.suffix != ".txt":
             raise OSError("File must end with '.txt'")
@@ -53,12 +68,26 @@ class MapParser:
             raise ParsingError("Invalid data format for hub or connection")
 
     def _read_file(self, path: Path) -> None:
+        """Read file lines and dispatch each to the line parser.
+
+        Args:
+            path: Filesystem path to map file.
+        """
         with open(path, "r") as file:
             for i, line in enumerate(file):
                 line_number = i + 1
                 self._parse_line(line, line_number)
 
     def _parse_line(self, line: str, line_number: int) -> None:
+        """Parse one logical input line.
+
+        Args:
+            line: Raw line content.
+            line_number: One-based line number for error reporting.
+
+        Raises:
+            ParsingError: If key-value format is invalid.
+        """
         line = line.strip()
         if not line or line.startswith("#"):
             return
@@ -76,6 +105,16 @@ class MapParser:
         self._route_key(key, info, line_number)
 
     def _route_key(self, key: str, info: str, line_number: int) -> None:
+        """Route a parsed key to the appropriate handler.
+
+        Args:
+            key: Parsed configuration key.
+            info: Value section associated with ``key``.
+            line_number: One-based line number for error reporting.
+
+        Raises:
+            ParsingError: If key is unknown or payload is invalid.
+        """
         try:
             match key:
                 case "nb_drones":
@@ -97,6 +136,15 @@ class MapParser:
             )
 
     def _handle_nb_drones(self, info: str, line_number: int) -> None:
+        """Parse and validate the ``nb_drones`` entry.
+
+        Args:
+            info: Raw drone-count text.
+            line_number: One-based line number for error reporting.
+
+        Raises:
+            ParsingError: If drone count is not a positive integer.
+        """
         try:
             self.nb_drones = int(info)
             if self.nb_drones < 1:
@@ -112,6 +160,15 @@ class MapParser:
             )
 
     def _handle_start_hub(self, info: str, line_number: int) -> None:
+        """Parse and register the unique start hub.
+
+        Args:
+            info: Raw hub declaration text.
+            line_number: One-based line number for error reporting.
+
+        Raises:
+            ParsingError: If start hub is duplicated or invalid.
+        """
         if self.start_hub:
             raise ParsingError("start_hub already defined", line_number)
         self.start_hub = Hub.model_validate(info)
@@ -130,6 +187,15 @@ class MapParser:
         self.hubs[self.start_hub.name] = self.start_hub
 
     def _handle_end_hub(self, info: str, line_number: int) -> None:
+        """Parse and register the unique end hub.
+
+        Args:
+            info: Raw hub declaration text.
+            line_number: One-based line number for error reporting.
+
+        Raises:
+            ParsingError: If end hub is duplicated or invalid.
+        """
         if self.end_hub:
             raise ParsingError("end_hub already defined", line_number)
 
@@ -150,6 +216,15 @@ class MapParser:
         self.hubs[self.end_hub.name] = self.end_hub
 
     def _handle_hub(self, info: str, line_number: int) -> None:
+        """Parse and register a regular hub.
+
+        Args:
+            info: Raw hub declaration text.
+            line_number: One-based line number for error reporting.
+
+        Raises:
+            ParsingError: If hub is duplicated or invalid.
+        """
         new_hub = Hub.model_validate(info)
         self._check_and_add_coordinates(new_hub, line_number)
 
@@ -161,6 +236,15 @@ class MapParser:
         self.hubs[new_hub.name] = new_hub
 
     def _handle_connection(self, info: str, line_number: int) -> None:
+        """Parse and register a connection between existing hubs.
+
+        Args:
+            info: Raw connection declaration text.
+            line_number: One-based line number for error reporting.
+
+        Raises:
+            ParsingError: If hubs are missing or connection is duplicated.
+        """
         connection = Connection.model_validate(info)
 
         hub_a_name = connection.hub_a
@@ -189,6 +273,15 @@ class MapParser:
         self.hubs[hub_b_name].connections.append(connection)
 
     def _check_and_add_coordinates(self, hub: Hub, line_number: int) -> None:
+        """Ensure hub coordinates are unique and record them.
+
+        Args:
+            hub: Hub to validate.
+            line_number: One-based line number for error reporting.
+
+        Raises:
+            ParsingError: If coordinates are already used by another hub.
+        """
         coords = (hub.x, hub.y)
         if coords in self.seen_coordinates:
             raise ParsingError(

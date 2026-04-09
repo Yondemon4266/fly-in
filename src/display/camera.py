@@ -2,9 +2,18 @@ from src.models.hub import Hub
 
 
 class Camera:
+    """Coordinate transformer from logical map space to screen space."""
+
     def __init__(
         self, hubs: dict[str, Hub], screen_width: int, screen_height: int
     ) -> None:
+        """Fit map bounds into the current viewport with margins.
+
+        Args:
+            hubs: Hubs used to compute logical world bounds.
+            screen_width: Current screen width in pixels.
+            screen_height: Current screen height in pixels.
+        """
         self.screen_width = screen_width
         self.screen_height = screen_height
         margin = 50
@@ -43,6 +52,15 @@ class Camera:
     def get_screen_coords(
         self, logical_x: float, logical_y: float
     ) -> tuple[int, int]:
+        """Project logical coordinates into screen pixel coordinates.
+
+        Args:
+            logical_x: Logical x coordinate.
+            logical_y: Logical y coordinate.
+
+        Returns:
+            Tuple of integer screen coordinates.
+        """
         screen_x = int(logical_x * self.scale + self.offset_x)
         screen_y = int(-logical_y * self.scale + self.offset_y)
         return screen_x, screen_y

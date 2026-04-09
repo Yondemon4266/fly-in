@@ -6,20 +6,39 @@ from src.display.drone import Drone, DroneState
 
 
 class SimulationEngine:
+    """Coordinate multi-drone route planning and simulation logging."""
 
     def __init__(self, map_config: MapConfig) -> None:
+        """Initialize planning components for a map configuration.
+
+        Args:
+            map_config: Parsed map with hubs, links, and drone count.
+        """
         self.map_config = map_config
         self.hubs = self._init_hubs_dict(map_config.hubs)
         self.pathfinder = Router(self.map_config, self.hubs)
         self.reservation_table: dict[tuple[int, str], int] = {}
 
     def _init_hubs_dict(self, list_hubs: list[Hub]) -> dict[str, Hub]:
+        """Index hubs by name for fast lookups.
+
+        Args:
+            list_hubs: Sequence of parsed hubs.
+
+        Returns:
+            Dictionary keyed by hub name.
+        """
         created_hubs: dict[str, Hub] = {}
         for hub in list_hubs:
             created_hubs[hub.name] = hub
         return created_hubs
 
     def _update_reservations(self, path: list[tuple[int, str]]) -> None:
+        """Reserve hub and link occupancy for a planned path.
+
+        Args:
+            path: Planned path as ``(turn, hub_name)`` tuples.
+        """
         t_start, start_hub = path[0]
         self.reservation_table[(t_start, start_hub)] = (
             self.reservation_table.get((t_start, start_hub), 0) + 1
@@ -46,6 +65,18 @@ class SimulationEngine:
     def _get_connection_name_from_hubs(
         self, hub1_name: str, hub2_name: str
     ) -> str:
+        """Resolve reservation key for the connection between two hubs.
+
+        Args:
+            hub1_name: First hub name.
+            hub2_name: Second hub name.
+
+        Returns:
+            Connection reservation key in ``hub_a_hub_b`` format.
+
+        Raises:
+            ConnectionNotFoundError: If no connection exists between hubs.
+        """
         for connection in self.hubs[hub1_name].connections:
             if connection.hub_a == hub2_name or connection.hub_b == hub2_name:
                 return f"{connection.hub_a}_{connection.hub_b}"
@@ -54,6 +85,7 @@ class SimulationEngine:
         )
 
     def plan_drone_schedules(self) -> None:
+        """Plan paths for all drones and build their timelines."""
         self.drones: list[Drone] = []
 
         for i in range(self.map_config.nb_drones):
@@ -80,6 +112,11 @@ class SimulationEngine:
         self.print_full_simulation_log(max_turn)
 
     def print_full_simulation_log(self, max_turn: int) -> None:
+        """Print compact turn-by-turn movement logs.
+
+        Args:
+            max_turn: Last turn to log.
+        """
         for turn in range(1, max_turn + 1):
             logs_for_this_turn: list[str] = []
 

@@ -9,12 +9,21 @@ import os
 
 
 class DisplayPygameFlyin:
+    """Interactive pygame renderer for drone simulation playback."""
+
     def __init__(
         self,
         drones: list[Drone],
         hubs: list[Hub],
         connections: list[Connection],
     ) -> None:
+        """Initialize rendering state and run the main display loop.
+
+        Args:
+            drones: Drones with precomputed timelines.
+            hubs: Map hubs to display.
+            connections: Map connections to display.
+        """
 
         self.asset_path = "assets/drone.png"
         self._check_asset_path()
@@ -69,18 +78,32 @@ class DisplayPygameFlyin:
         pygame.quit()
 
     def _check_asset_path(self) -> None:
+        """Ensure required image assets are available on disk.
+
+        Raises:
+            FileNotFoundError: If the drone image cannot be found.
+        """
         if not os.path.exists(self.asset_path):
             raise FileNotFoundError(
                 f"Missing required asset: '{self.asset_path}'"
             )
 
     def _init_hubs_dict(self, list_hubs: list[Hub]) -> dict[str, Hub]:
+        """Index hubs by name for O(1) lookup.
+
+        Args:
+            list_hubs: Sequence of parsed hubs.
+
+        Returns:
+            Dictionary keyed by hub name.
+        """
         created_hubs: dict[str, Hub] = {}
         for hub in list_hubs:
             created_hubs[hub.name] = hub
         return created_hubs
 
     def _advance_turn_time(self) -> None:
+        """Advance or rewind turn progress according to playback state."""
         if self.advancing:
             self.turn_progress += self.dt
             if self.turn_progress >= self.turn_duration:
@@ -107,6 +130,7 @@ class DisplayPygameFlyin:
                     self.pause_at_turn = -1
 
     def _event_handler(self) -> None:
+        """Process pygame window and keyboard events for playback controls."""
         for event in pygame.event.get():
             match event.type:
                 case pygame.QUIT:
@@ -144,12 +168,14 @@ class DisplayPygameFlyin:
                                 self.pause_at_turn = self.current_turn
 
     def _display_fps(self) -> None:
+        """Render the current frame-per-second counter."""
         fps = int(self.clock.get_fps())
         fps_surface = self.font.render(f"FPS: {fps}", True, (255, 255, 255))
         fps_rect = fps_surface.get_rect(topleft=(10, 10))
         self.screen.blit(fps_surface, fps_rect)
 
     def _display_shortcuts(self) -> None:
+        """Render the keyboard shortcuts help panel."""
         lines_of_text = [
             "Shortcuts: ",
             "P: Play/Pause",
@@ -189,6 +215,7 @@ class DisplayPygameFlyin:
         self.screen.blits(blits_to_draw)
 
     def _display_top_right_info(self) -> None:
+        """Render global simulation statistics in the top-right corner."""
         lines_of_text = [
             f"Current turn: {self.current_turn}",
             f"Resolved in: {self.max_turn} turns",
@@ -211,6 +238,11 @@ class DisplayPygameFlyin:
         self.screen.blits(blits_to_draw)
 
     def _display_bottom_right_info(self, hub: Hub) -> None:
+        """Render details for the currently hovered hub.
+
+        Args:
+            hub: Hovered hub to summarize.
+        """
         screen_width = self.screen.get_width()
         screen_height = self.screen.get_height()
 
@@ -244,6 +276,7 @@ class DisplayPygameFlyin:
         self.screen.blits(blits_to_draw)
 
     def _display_bottom_left_legend(self) -> None:
+        """Render the zone-type legend in the bottom-left corner."""
         screen_height = self.screen.get_height()
         padding_x = 50
         padding_y = 20
@@ -284,6 +317,12 @@ class DisplayPygameFlyin:
     def _display_hub_capacity(
         self, hub: Hub, centered_pos: tuple[int, int]
     ) -> None:
+        """Render capacity text centered on a hub circle.
+
+        Args:
+            hub: Hub whose capacity is displayed.
+            centered_pos: Hub center in screen coordinates.
+        """
         capacity_surface = self.font.render(
             str(hub.metadata.max_drones), True, (255, 255, 255)
         )
@@ -293,6 +332,12 @@ class DisplayPygameFlyin:
     def _display_hub_name(
         self, hub: Hub, centered_pos: tuple[int, int]
     ) -> None:
+        """Render hub label above the hub marker.
+
+        Args:
+            hub: Hub whose name is displayed.
+            centered_pos: Hub center in screen coordinates.
+        """
         text_surface = self.font.render(hub.name, True, (255, 255, 255))
 
         offset_y = self.camera.hub_radius + 20
@@ -303,6 +348,7 @@ class DisplayPygameFlyin:
         self.screen.blit(text_surface, text_rect)
 
     def _draw_hubs(self) -> None:
+        """Draw hubs and hover interactions."""
         mouse_x, mouse_y = pygame.mouse.get_pos()
         for hub in self.hubs.values():
             centered_pos = self.camera.get_screen_coords(hub.x, hub.y)
@@ -337,6 +383,11 @@ class DisplayPygameFlyin:
                 self._display_bottom_right_info(hub)
 
     def _display_connection_info(self, connection: Connection) -> None:
+        """Render details for the currently hovered connection.
+
+        Args:
+            connection: Hovered connection to summarize.
+        """
         screen_width = self.screen.get_width()
         screen_height = self.screen.get_height()
         lines_of_text = [
@@ -360,6 +411,7 @@ class DisplayPygameFlyin:
         self.screen.blits(blits_to_draw)
 
     def _draw_connections(self) -> None:
+        """Draw all hub-to-hub links and highlight hovered connection."""
         mouse_x, mouse_y = pygame.mouse.get_pos()
         for connection in self.connections:
             hub_a = self.hubs[connection.hub_a]
@@ -409,6 +461,7 @@ class DisplayPygameFlyin:
                 )
 
     def _draw_drones(self) -> None:
+        """Draw interpolated drone positions for the current turn progress."""
 
         lerp_factor = self.turn_progress / max(self.turn_duration, 1)
         positions_count: dict[tuple[int, int], int] = {}
@@ -439,6 +492,7 @@ class DisplayPygameFlyin:
                 self.screen.blit(text_surface, text_rect)
 
     def _update_drone_image_size(self) -> None:
+        """Resize drone sprite according to camera zoom level."""
         size = int(self.camera.drone_radius * 8)
 
         self.current_drone_img = pygame.transform.smoothscale(
@@ -448,6 +502,15 @@ class DisplayPygameFlyin:
     def _get_logical_pos_at_turn(
         self, drone: Drone, turn: int
     ) -> tuple[float, float]:
+        """Resolve drone logical position at a given turn.
+
+        Args:
+            drone: Drone to query.
+            turn: Turn number to inspect.
+
+        Returns:
+            Logical coordinates for rendering interpolation.
+        """
         info = drone.get_state_at(turn)
         hub = self.hubs[info.hub]
 
@@ -466,6 +529,14 @@ class DisplayPygameFlyin:
     def _get_zone_border(
         self, zone_type: ZoneType
     ) -> tuple[tuple[int, int, int], int]:
+        """Get border color and thickness for a zone type.
+
+        Args:
+            zone_type: Hub zone category.
+
+        Returns:
+            Border RGB tuple and border thickness.
+        """
         match zone_type.value:
             case "restricted":
                 return (255, 140, 0), 6
@@ -477,6 +548,14 @@ class DisplayPygameFlyin:
                 return (150, 150, 150), 4
 
     def _get_valid_color(self, color_name: str | None) -> str:
+        """Return a pygame-safe color name with fallback.
+
+        Args:
+            color_name: Candidate color name from metadata.
+
+        Returns:
+            Valid color string accepted by pygame.
+        """
         if not color_name:
             return "gray"
 

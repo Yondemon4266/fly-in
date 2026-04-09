@@ -11,6 +11,8 @@ from enum import Enum
 
 
 class ZoneType(Enum):
+    """Supported zone behaviors for a hub."""
+
     NORMAL = "normal"
     BLOCKED = "blocked"
     RESTRICTED = "restricted"
@@ -18,6 +20,14 @@ class ZoneType(Enum):
 
 
 class HubMetadata(BaseModel):
+    """Metadata associated with a hub.
+
+    Attributes:
+        zone: Zone behavior category for routing and display logic.
+        color: Optional display color name.
+        max_drones: Maximum drones that can occupy the hub simultaneously.
+    """
+
     model_config = ConfigDict(extra="forbid")
 
     zone: ZoneType = Field(default=ZoneType.NORMAL)
@@ -27,6 +37,18 @@ class HubMetadata(BaseModel):
     @model_validator(mode="before")
     @classmethod
     def string_to_dict(cls, data: Any) -> Any:
+        """Convert metadata string representation into a dictionary.
+
+        Args:
+            data: Raw metadata value, usually a string like
+                ``[zone=priority color=red max_drones=2]``.
+
+        Returns:
+            Parsed dictionary or original input when no conversion is needed.
+
+        Raises:
+            ValueError: If input string format is invalid.
+        """
         message = (
             "Invalid format for hub metadata, expected format: "
             "[key=value].\ninput: "

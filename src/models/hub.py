@@ -12,6 +12,16 @@ from src.models.connection import Connection
 
 
 class Hub(BaseModel):
+    """Map hub node and its metadata.
+
+    Attributes:
+        name: Unique hub identifier.
+        x: Horizontal coordinate.
+        y: Vertical coordinate.
+        metadata: Zone and capacity constraints.
+        connections: Outgoing hub connections.
+    """
+
     name: str = Field(...)
     x: int = Field(...)
     y: int = Field(...)
@@ -22,6 +32,17 @@ class Hub(BaseModel):
     @model_validator(mode="before")
     @classmethod
     def string_to_dict(cls, data: Any) -> Any:
+        """Convert a compact hub string into validated model fields.
+
+        Args:
+            data: Raw value, usually ``name x y [key=value]``.
+
+        Returns:
+            Parsed dictionary for model construction, or original input.
+
+        Raises:
+            ValueError: If the hub string is malformed.
+        """
         message = (
             "Invalid format for Hub, expected format: "
             "name x y [key=value].\ninput: "

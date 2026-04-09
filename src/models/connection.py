@@ -11,6 +11,14 @@ from src.models.connection_metadata import ConnectionMetadata
 
 
 class Connection(BaseModel):
+    """Undirected connection between two hubs.
+
+    Attributes:
+        hub_a: First hub name.
+        hub_b: Second hub name.
+        metadata: Connection constraints such as maximum capacity.
+    """
+
     model_config = ConfigDict(extra="forbid")
 
     hub_a: str = Field(...)
@@ -20,6 +28,17 @@ class Connection(BaseModel):
     @model_validator(mode="before")
     @classmethod
     def string_to_dict(cls, data: Any) -> Any:
+        """Convert a compact connection string into validated model fields.
+
+        Args:
+            data: Raw value, usually ``hubA-hubB [key=value]``.
+
+        Returns:
+            Parsed dictionary for model construction, or original input.
+
+        Raises:
+            ValueError: If the connection string is malformed.
+        """
         message = (
             "Invalid format for connection, expected format: "
             "name1-name2 [key=value].\ninput: "

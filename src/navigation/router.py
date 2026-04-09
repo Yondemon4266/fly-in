@@ -9,12 +9,28 @@ import sys
 
 
 class Router:
+    """Pathfinding service that computes collision-aware drone routes."""
+
     def __init__(self, map_config: MapConfig, hubs: dict[str, Hub]):
+        """Initialize router and precompute heuristic distances.
+
+        Args:
+            map_config: Parsed map configuration.
+            hubs: Hub index keyed by hub name.
+        """
         self.map_config = map_config
         self.hubs = hubs
         self.distances_to_end = self._calculate_reverse_distances_dijkstra()
 
     def _calculate_reverse_distances_dijkstra(self) -> dict[str, int]:
+        """Compute shortest reverse distances from every hub to destination.
+
+        Returns:
+            Minimal turn estimates keyed by hub name.
+
+        Raises:
+            PathNotFoundError: If start hub is unreachable from end hub.
+        """
         distances: dict[str, int] = {
             hub_name: sys.maxsize for hub_name in self.hubs
         }
@@ -70,6 +86,17 @@ class Router:
     def a_star_path_finder(
         self, reservation_table: dict[tuple[int, str], int]
     ) -> list[tuple[int, str]]:
+        """Find a feasible path while respecting capacity reservations.
+
+        Args:
+            reservation_table: Per-turn occupancy for hubs and links.
+
+        Returns:
+            Ordered list of ``(turn, hub_name)`` route states.
+
+        Raises:
+            PathNotFoundError: If no valid route can be produced.
+        """
         start_hub_name = self.map_config.start_hub.name
 
         start_node = AStarNode(
@@ -96,6 +123,14 @@ class Router:
         raise PathNotFoundError("No path found for this drone...")
 
     def _reconstruct_path(self, end_node: AStarNode) -> list[tuple[int, str]]:
+        """Rebuild a full path from the terminal A* node.
+
+        Args:
+            end_node: Last node that reached destination.
+
+        Returns:
+            Forward path as ``(turn, hub_name)`` tuples.
+        """
         path: list[tuple[int, str]] = []
         current: AStarNode | None = end_node
 
@@ -106,9 +141,25 @@ class Router:
         return path[::-1]
 
     def _get_hub_distance(self, hub_name: str) -> int:
+        """Return heuristic distance from a hub to the destination.
+
+        Args:
+            hub_name: Hub name to query.
+
+        Returns:
+            Estimated turns to destination or ``sys.maxsize`` if unknown.
+        """
         return self.distances_to_end.get(hub_name, sys.maxsize)
 
     def _is_unlimited_capacity(self, hub_name: str) -> bool:
+        """Check whether hub capacity limits should be ignored.
+
+        Args:
+            hub_name: Hub name to query.
+
+        Returns:
+            ``True`` for start/end hubs with unlimited occupancy.
+        """
         return hub_name in (
             self.map_config.start_hub.name,
             self.map_config.end_hub.name,
@@ -117,11 +168,28 @@ class Router:
     def _get_destination_name(
         self, connection: Connection, current_hub_name: str
     ) -> str:
+        """Resolve the opposite hub of a connection.
+
+        Args:
+            connection: Connection linked to current hub.
+            current_hub_name: Current hub name.
+
+        Returns:
+            Destination hub name.
+        """
         if connection.hub_a == current_hub_name:
             return connection.hub_b
         return connection.hub_a
 
     def _get_connection_name(self, connection: Connection) -> str:
+        """Build reservation key for a connection.
+
+        Args:
+            connection: Connection to encode.
+
+        Returns:
+            String key in ``hub_a_hub_b`` format.
+        """
         return f"{connection.hub_a}_{connection.hub_b}"
 
     def _create_wait_node(
@@ -129,6 +197,15 @@ class Router:
         current_node: AStarNode,
         reservation_table: dict[tuple[int, str], int],
     ) -> AStarNode | None:
+        """Create a next-state node that keeps the drone on the same hub.
+
+        Args:
+            current_node: Current search state.
+            reservation_table: Per-turn occupancy table.
+
+        Returns:
+            Valid waiting node or ``None`` when capacity is exceeded.
+        """
         arrival_turn = current_node.turns_from_start + 1
         current_hub = self.hubs[current_node.hub_name]
 
@@ -158,6 +235,17 @@ class Router:
         connection: Connection,
         reservation_table: dict[tuple[int, str], int],
     ) -> AStarNode | None:
+        """Create a one-turn movement node to a normal or priority hub.
+
+        Args:
+            current_node: Current search state.
+            destination_hub: Candidate destination hub.
+            connection: Link used for movement.
+            reservation_table: Per-turn occupancy table.
+
+        Returns:
+            Valid movement node or ``None`` when blocked by capacities.
+        """
         current_turn = current_node.turns_from_start
         arrival_turn = current_turn + 1
         connection_name = self._get_connection_name(connection)
@@ -192,6 +280,17 @@ class Router:
         connection: Connection,
         reservation_table: dict[tuple[int, str], int],
     ) -> AStarNode | None:
+        """Create a two-turn movement node for restricted destination hubs.
+
+        Args:
+            current_node: Current search state.
+            destination_hub: Restricted destination hub.
+            connection: Link used for movement.
+            reservation_table: Per-turn occupancy table.
+
+        Returns:
+            Valid movement node or ``None`` when blocked by capacities.
+        """
         current_turn = current_node.turns_from_start
         arrival_turn = current_turn + 2
         connection_name = self._get_connection_name(connection)
@@ -230,6 +329,15 @@ class Router:
         current_node: AStarNode,
         reservation_table: dict[tuple[int, str], int],
     ) -> list[AStarNode]:
+        """Generate all feasible neighbor states from current node.
+
+        Args:
+            current_node: Current search state.
+            reservation_table: Per-turn occupancy table.
+
+        Returns:
+            List of reachable next states.
+        """
         neighbors: list[AStarNode] = []
 
         wait_node = self._create_wait_node(current_node, reservation_table)

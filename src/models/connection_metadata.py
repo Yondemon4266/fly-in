@@ -10,6 +10,13 @@ from src.parser.parser_utils import ParserUtils
 
 
 class ConnectionMetadata(BaseModel):
+    """Metadata associated with a connection.
+
+    Attributes:
+        max_link_capacity: Maximum number of drones allowed concurrently on
+            this link.
+    """
+
     model_config = ConfigDict(extra="forbid")
 
     max_link_capacity: int = Field(default=1, gt=0)
@@ -17,6 +24,18 @@ class ConnectionMetadata(BaseModel):
     @model_validator(mode="before")
     @classmethod
     def string_to_dict(cls, data: Any) -> Any:
+        """Convert metadata string representation into a dictionary.
+
+        Args:
+            data: Raw metadata value, usually a string like
+                ``[max_link_capacity=3]``.
+
+        Returns:
+            Parsed dictionary or original input when no conversion is needed.
+
+        Raises:
+            ValueError: If input string format is invalid.
+        """
         message = (
             "Invalid format for connection metadata, expected format: "
             "[key=value].\ninput: "
