@@ -59,6 +59,7 @@ class DisplayPygameFlyin:
             self._draw_drones()
             self._display_fps()
             self._display_top_right_info()
+            self._display_bottom_left_legend()
             pygame.display.flip()
             self.dt = self.clock.tick(60)
         pygame.quit()
@@ -197,6 +198,44 @@ class DisplayPygameFlyin:
             )
             blits_to_draw.append((surface, rect))
         self.screen.blits(blits_to_draw)
+
+    def _display_bottom_left_legend(self) -> None:
+        screen_height = self.screen.get_height()
+        padding_x = 50
+        padding_y = 20
+        spacing = 100
+        legend_items = [
+            (ZoneType.NORMAL, "Normal"),
+            (ZoneType.PRIORITY, "Priority"),
+            (ZoneType.RESTRICTED, "Restricted"),
+            (ZoneType.BLOCKED, "Blocked"),
+        ]
+
+        for i, (z_type, label) in enumerate(legend_items):
+            x_pos = padding_x + (i * spacing)
+            y_pos_circle = (
+                screen_height - padding_y - self.camera.hub_radius - 30
+            )
+
+            border_color, thickness = self._get_zone_border(z_type)
+
+            pygame.draw.circle(
+                self.screen,
+                border_color,
+                (x_pos, y_pos_circle),
+                self.camera.hub_radius + thickness,
+            )
+
+            pygame.draw.circle(
+                self.screen,
+                self.bg_color,
+                (x_pos, y_pos_circle),
+                self.camera.hub_radius,
+            )
+
+            text_surf = self.font.render(label, True, (255, 255, 255))
+            text_rect = text_surf.get_rect(center=(x_pos, screen_height - 20))
+            self.screen.blit(text_surf, text_rect)
 
     def _display_hub_capacity(
         self, hub: Hub, centered_pos: tuple[int, int]
