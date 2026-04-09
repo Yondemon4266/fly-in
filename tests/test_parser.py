@@ -13,7 +13,6 @@ invalid_files = list(INVALID_MAPS_DIR.glob("*.txt"))
 valid_files = list(VALID_MAPS_DIR.glob("*.txt"))
 
 
-
 @pytest.mark.parametrize("file_path", invalid_files, ids=lambda p: p.name)
 def test_parser_with_invalid_files(file_path):
     with pytest.raises(ParsingError) as exc_info:

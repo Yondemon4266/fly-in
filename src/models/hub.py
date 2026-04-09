@@ -29,7 +29,8 @@ class Hub(BaseModel):
         if isinstance(data, str):
             data_clean = data.strip()
             info_part = data_clean
-            meta_dict = {}
+            meta_dict: dict[str, Any] | str = {}
+
             if "[" in data_clean:
                 parts = data_clean.split("[")
                 if len(parts) != 2:
