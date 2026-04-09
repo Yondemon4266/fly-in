@@ -2,7 +2,7 @@ from src.models.map_config import MapConfig
 from src.models.hub import Hub
 from src.navigation.router import Router
 from src.exceptions import ConnectionNotFoundError
-from src.display.drone import Drone
+from src.display.drone import Drone, DroneState
 
 
 class SimulationEngine:
@@ -57,11 +57,6 @@ class SimulationEngine:
         self.drones: list[Drone] = []
 
         for i in range(self.map_config.nb_drones):
-            if i % 100 == 0 and i > 0:
-                print(
-                    f"Planning routes: {i}/{self.map_config.nb_drones} "
-                    "drones processed..."
-                )
             drone = Drone(drone_id=i + 1)
             drone_temporal_path = self.pathfinder.a_star_path_finder(
                 self.reservation_table
@@ -81,3 +76,27 @@ class SimulationEngine:
 
         for drone in self.drones:
             drone.generate_timeline(max_turn)
+
+        self.print_full_simulation_log(max_turn)
+
+    def print_full_simulation_log(self, max_turn: int) -> None:
+        for turn in range(1, max_turn + 1):
+            logs_for_this_turn: list[str] = []
+
+            for drone in self.drones:
+                previous_state = drone.get_state_at(turn - 1)
+                current_state = drone.get_state_at(turn)
+
+                if (
+                    previous_state.hub != current_state.hub
+                    or previous_state.from_hub
+                ):
+                    if current_state.state is DroneState.IN_TRANSIT:
+                        log_entry = f"D{drone.id}-{current_state.from_hub}-{current_state.hub}"
+                        logs_for_this_turn.append(log_entry)
+                    else:
+                        log_entry = f"D{drone.id}-{current_state.hub}"
+                        logs_for_this_turn.append(log_entry)
+
+            if logs_for_this_turn:
+                print(" ".join(logs_for_this_turn))

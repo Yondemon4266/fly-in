@@ -15,4 +15,6 @@ class AStarNode:
         self.parent = parent
 
     def __lt__(self, other: "AStarNode") -> bool:
+        if self.total_estimated_turns == other.total_estimated_turns:
+            return self.turns_from_start > other.turns_from_start
         return self.total_estimated_turns < other.total_estimated_turns

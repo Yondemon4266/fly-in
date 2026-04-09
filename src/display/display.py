@@ -61,6 +61,7 @@ class DisplayPygameFlyin:
             self._draw_hubs()
             self._draw_drones()
             self._display_fps()
+            self._display_shortcuts()
             self._display_top_right_info()
             self._display_bottom_left_legend()
             pygame.display.flip()
@@ -147,6 +148,45 @@ class DisplayPygameFlyin:
         fps_surface = self.font.render(f"FPS: {fps}", True, (255, 255, 255))
         fps_rect = fps_surface.get_rect(topleft=(10, 10))
         self.screen.blit(fps_surface, fps_rect)
+
+    def _display_shortcuts(self) -> None:
+        lines_of_text = [
+            "Shortcuts: ",
+            "P: Play/Pause",
+            "R: Restart",
+            "Right arrow: next turn",
+            "Left arrow: previous turn",
+        ]
+
+        surfaces = [
+            self.font.render(text, True, (240, 240, 240))
+            for text in lines_of_text
+        ]
+
+        padding = 12
+        line_height = self.font.get_linesize()
+
+        max_width = max(surface.get_width() for surface in surfaces)
+        box_width = max_width + (padding * 2)
+        box_height = (line_height * len(surfaces)) + (padding * 2)
+
+        bg_surface = pygame.Surface((box_width, box_height))
+        bg_surface.fill((27, 27, 27))
+
+        start_x = (self.screen.get_width() - box_width) // 2
+        start_y = 10
+
+        self.screen.blit(bg_surface, (start_x, start_y))
+
+        blits_to_draw = []
+        for index, surface in enumerate(surfaces):
+            text_x = start_x + (box_width - surface.get_width()) // 2
+            text_y = start_y + padding + (index * line_height)
+
+            rect = surface.get_rect(topleft=(text_x, text_y))
+            blits_to_draw.append((surface, rect))
+
+        self.screen.blits(blits_to_draw)
 
     def _display_top_right_info(self) -> None:
         lines_of_text = [

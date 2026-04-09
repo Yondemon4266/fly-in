@@ -5,6 +5,7 @@ from src.navigation.simulation_engine import SimulationEngine
 from src.display.display import DisplayPygameFlyin
 import pygame
 
+
 if __name__ == "__main__":
     if len(sys.argv) != 2:
         sys.stderr.write("Provide one map file argument that ends with .txt")
@@ -27,5 +28,5 @@ if __name__ == "__main__":
         sys.stderr.write(f"[Display Error] Pygame failed: {e}\n\n")
         sys.exit(1)
     except Exception as e:
-        sys.stderr.write(f"[Unexpected Error] {e.__class__.__name__}: {e}\n\n")
+        sys.stderr.write(f"[Unexpected Error] {e.__class__.__name__}: {e}\n")
         sys.exit(1)
