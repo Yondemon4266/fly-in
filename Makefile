@@ -8,7 +8,7 @@ run:
 	uv run python -m src $(ARGS)
 
 debug:
-	uv run python -m pdb -m src
+	uv run python -m pdb -m src $(ARGS)
 
 clean:
 	rm -rf .mypy_cache
