@@ -129,7 +129,10 @@ class SimulationEngine:
                     or previous_state.from_hub
                 ):
                     if current_state.state is DroneState.IN_TRANSIT:
-                        log_entry = f"D{drone.id}-{current_state.from_hub}-{current_state.hub}"
+                        log_entry = (
+                            f"D{drone.id}-{current_state.from_hub}"
+                            f"-{current_state.hub}"
+                        )
                         logs_for_this_turn.append(log_entry)
                     else:
                         log_entry = f"D{drone.id}-{current_state.hub}"
