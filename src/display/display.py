@@ -21,6 +21,9 @@ class DisplayPygameFlyin:
 
         self.drones = drones
         self.hubs = self._init_hubs_dict(hubs)
+        self.total_paths_cost = sum(
+            drone.raw_path[-1][0] for drone in self.drones
+        )
         self.connections = connections
         self.screen = pygame.display.set_mode((1280, 720))
         self.camera = Camera(self.hubs, self.screen.width, self.screen.height)
@@ -150,6 +153,7 @@ class DisplayPygameFlyin:
             f"Current turn: {self.current_turn}",
             f"Resolved in: {self.max_turn} turns",
             f"Total drones: {len(self.drones)}",
+            f"Total path cost: {self.total_paths_cost}",
         ]
         surfaces = [
             self.font.render(text, True, (255, 255, 255))
