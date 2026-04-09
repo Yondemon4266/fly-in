@@ -12,7 +12,7 @@ from src.models.map_config import MapConfig
 
 
 class MapParser:
-    def __init__(self):
+    def __init__(self) -> None:
         self.nb_drones: Optional[int] = None
         self.start_hub: Optional[Hub] = None
         self.end_hub: Optional[Hub] = None
@@ -21,7 +21,7 @@ class MapParser:
         self.seen_coordinates: set[tuple[int, int]] = set()
 
     @classmethod
-    def parse(cls, file_path: str):
+    def parse(cls, file_path: str) -> MapConfig:
         path = Path(file_path)
         if path.suffix != ".txt":
             raise OSError("File must end with '.txt'")
@@ -52,13 +52,13 @@ class MapParser:
             ParserUtils.print_formatted_errors(e)
             raise ParsingError("Invalid data format for hub or connection")
 
-    def _read_file(self, path: Path):
+    def _read_file(self, path: Path) -> None:
         with open(path, "r") as file:
             for i, line in enumerate(file):
                 line_number = i + 1
                 self._parse_line(line, line_number)
 
-    def _parse_line(self, line: str, line_number: int):
+    def _parse_line(self, line: str, line_number: int) -> None:
         line = line.strip()
         if not line or line.startswith("#"):
             return
@@ -75,7 +75,7 @@ class MapParser:
 
         self._route_key(key, info, line_number)
 
-    def _route_key(self, key: str, info: str, line_number: int):
+    def _route_key(self, key: str, info: str, line_number: int) -> None:
         try:
             match key:
                 case "nb_drones":
@@ -96,7 +96,7 @@ class MapParser:
                 "Invalid data format for hub or connection", line_number
             )
 
-    def _handle_nb_drones(self, info: str, line_number: int):
+    def _handle_nb_drones(self, info: str, line_number: int) -> None:
         try:
             self.nb_drones = int(info)
             if self.nb_drones < 1:
@@ -111,25 +111,25 @@ class MapParser:
                 line_number,
             )
 
-    def _handle_start_hub(self, info: str, line_number: int):
+    def _handle_start_hub(self, info: str, line_number: int) -> None:
         if self.start_hub:
             raise ParsingError("start_hub already defined", line_number)
         self.start_hub = Hub.model_validate(info)
         self._check_and_add_coordinates(self.start_hub, line_number)
         if self.start_hub.name in self.hubs:
             raise ParsingError(
-                f"Hub {self.start_hub.name} already declared in hubs",
+                "Hub {self.start_hub.name} already declared in hubs",
                 line_number,
             )
         if not self.nb_drones:
             raise ParsingError(
-                f"nb_drones key must be declared first.'",
+                "nb_drones key must be declared first.'",
                 line_number,
             )
         self.start_hub.metadata.max_drones = self.nb_drones
         self.hubs[self.start_hub.name] = self.start_hub
 
-    def _handle_end_hub(self, info: str, line_number: int):
+    def _handle_end_hub(self, info: str, line_number: int) -> None:
         if self.end_hub:
             raise ParsingError("end_hub already defined", line_number)
 
@@ -143,13 +143,13 @@ class MapParser:
             )
         if not self.nb_drones:
             raise ParsingError(
-                f"nb_drones key must be declared first.'",
+                "nb_drones key must be declared first.'",
                 line_number,
             )
         self.end_hub.metadata.max_drones = self.nb_drones
         self.hubs[self.end_hub.name] = self.end_hub
 
-    def _handle_hub(self, info: str, line_number: int):
+    def _handle_hub(self, info: str, line_number: int) -> None:
         new_hub = Hub.model_validate(info)
         self._check_and_add_coordinates(new_hub, line_number)
 
@@ -160,7 +160,7 @@ class MapParser:
             )
         self.hubs[new_hub.name] = new_hub
 
-    def _handle_connection(self, info: str, line_number: int):
+    def _handle_connection(self, info: str, line_number: int) -> None:
         connection = Connection.model_validate(info)
 
         hub_a_name = connection.hub_a
@@ -188,7 +188,7 @@ class MapParser:
         self.hubs[hub_a_name].connections.append(connection)
         self.hubs[hub_b_name].connections.append(connection)
 
-    def _check_and_add_coordinates(self, hub: Hub, line_number: int):
+    def _check_and_add_coordinates(self, hub: Hub, line_number: int) -> None:
         coords = (hub.x, hub.y)
         if coords in self.seen_coordinates:
             raise ParsingError(

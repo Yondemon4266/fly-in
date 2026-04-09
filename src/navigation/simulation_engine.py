@@ -2,6 +2,7 @@ from src.models.map_config import MapConfig
 from src.models.hub import Hub
 from src.navigation.router import Router
 from src.exceptions import ConnectionNotFoundError
+from src.display.drone import Drone
 
 
 class SimulationEngine:
@@ -52,67 +53,31 @@ class SimulationEngine:
             f"Can't find connection between {hub1_name} {hub2_name}!"
         )
 
-    def execute_turns(self) -> None:
-        self.all_drones_paths: list[list[tuple[int, str]]] = []
-        for _ in range(self.map_config.nb_drones):
+    def plan_drone_schedules(self) -> None:
+        self.drones: list[Drone] = []
+
+        for i in range(self.map_config.nb_drones):
+            if i % 100 == 0 and i > 0:
+                print(
+                    f"Planning routes: {i}/{self.map_config.nb_drones} "
+                    "drones processed..."
+                )
+            drone = Drone(drone_id=i + 1)
             drone_temporal_path = self.pathfinder.a_star_path_finder(
                 self.reservation_table
             )
+
             self._update_reservations(drone_temporal_path)
-            self.all_drones_paths.append(drone_temporal_path)
-        self._display_simulation(self.all_drones_paths)
+            drone.raw_path = drone_temporal_path
+            self.drones.append(drone)
 
-    def _display_simulation(
-        self, all_drones_paths: list[list[tuple[int, str]]]
-    ) -> None:
-        if not all_drones_paths:
-            print("No paths to display.")
-            return
+        max_turn = 0
+        if self.drones:
+            max_turn = max(
+                drone.raw_path[-1][0]
+                for drone in self.drones
+                if drone.raw_path
+            )
 
-        # 1. Le VRAI max_turn est le dernier temps (index 0 du tuple) du trajet le plus long
-        max_turn = max(path[-1][0] for path in all_drones_paths)
-
-        print("\n" + "=" * 30)
-        print("     SIMULATION RESULTS")
-        print("=" * 30)
-
-        # 2. On transforme les étapes en une ligne du temps complète pour chaque drone
-        timelines: list[dict[int, str]] = []
-        for path in all_drones_paths:
-            timeline: dict[int, str] = {}
-            for i in range(len(path)):
-                t, hub = path[i]
-                timeline[t] = hub
-
-                # Si on a sauté un tour (zone restreinte), on comble le trou avec un statut "Transit"
-                if i < len(path) - 1:
-                    next_t, next_hub = path[i + 1]
-                    for transit_t in range(t + 1, next_t):
-                        timeline[transit_t] = f"Transit ({hub} -> {next_hub})"
-
-            # On remplit tous les tours restants avec le statut "Arrived"
-            final_t, final_hub = path[-1]
-            for t in range(final_t + 1, max_turn + 1):
-                timeline[t] = f"{final_hub} (Arrived)"
-
-            timelines.append(timeline)
-
-        # 3. L'affichage propre, en lisant la ligne du temps
-        for current_turn in range(max_turn + 1):
-            print(f"\n--- TURN {current_turn} ---")
-
-            for drone_index, timeline in enumerate(timelines, start=1):
-                status = timeline[current_turn]
-
-                # Détection de l'attente (si on est au même endroit et qu'on ne bouge pas)
-                if (
-                    current_turn > 0
-                    and status == timeline[current_turn - 1]
-                    and "Arrived" not in status
-                    and "Transit" not in status
-                ):
-                    print(f"Drone {drone_index} : {status} (Waiting)")
-                else:
-                    print(f"Drone {drone_index} : {status}")
-
-        print("\n" + "=" * 30 + "\n")
+        for drone in self.drones:
+            drone.generate_timeline(max_turn)

@@ -1,7 +1,9 @@
 import sys
-from src.exceptions import ParsingError
+from src.exceptions import FlyinError
 from src.parser.parser import MapParser
 from src.navigation.simulation_engine import SimulationEngine
+from src.display.display import DisplayPygameFlyin
+import pygame
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
@@ -10,10 +12,20 @@ if __name__ == "__main__":
     try:
         map_config = MapParser.parse(sys.argv[1])
         simulation_engine = SimulationEngine(map_config)
-        simulation_engine.execute_turns()
+        simulation_engine.plan_drone_schedules()
+        DisplayPygameFlyin(
+            simulation_engine.drones, map_config.hubs, map_config.connections
+        )
+
     except OSError as e:
-        sys.stderr.write(f"{e}")
+        sys.stderr.write(f"{e}\n\n")
         sys.exit(1)
-    except ParsingError as e:
-        sys.stderr.write(f"{e}")
+    except FlyinError as e:
+        sys.stderr.write(f"{e}\n\n")
+        sys.exit(1)
+    except pygame.error as e:
+        sys.stderr.write(f"[Display Error] Pygame failed: {e}\n\n")
+        sys.exit(1)
+    except Exception as e:
+        sys.stderr.write(f"[Unexpected Error] {e.__class__.__name__}: {e}\n\n")
         sys.exit(1)
